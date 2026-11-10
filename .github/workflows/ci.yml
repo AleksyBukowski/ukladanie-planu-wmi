@@ -1,0 +1,118 @@
+# CI: lintery i testy przy każdym pull requeście (NFR-07, P-05).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nowy push do tego samego PR anuluje poprzednie, niedokończone uruchomienie.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (ruff + pytest)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: plan_test
+          POSTGRES_USER: plan
+          POSTGRES_PASSWORD: plan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U plan -d plan_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Testy backendu w CI działają na prawdziwym PostgreSQL (lokalnie: SQLite w pamięci).
+      DATABASE_URL: postgresql+psycopg://plan:plan@localhost:5432/plan_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements*.txt
+            mock-usos/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements-dev.txt -r mock-usos/requirements.txt
+
+      - name: Ruff (lint)
+        run: ruff check --output-format=github .
+
+      - name: Ruff (format)
+        run: ruff format --check .
+
+      - name: Pytest – backend
+        working-directory: backend
+        run: pytest
+
+      - name: Pytest – mock USOS
+        working-directory: mock-usos
+        run: pytest
+
+  frontend:
+    name: Frontend (eslint + prettier + tsc + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Typecheck + build
+        run: npm run build
+
+  docker:
+    name: Docker Compose (build + smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate compose files
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose config --quiet
+
+      - name: Start full stack (production config)
+        run: docker compose -f docker-compose.yml up -d --build --wait --wait-timeout 180
+
+      - name: Smoke test (nginx → backend → PostgreSQL)
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q '<div id="root">'
+          curl -fsS http://localhost:8080/api/health | tee /dev/stderr | grep -q '"database":"ok"'
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml down -v

@@ -1,0 +1,49 @@
+# Nadpisania dla środowiska deweloperskiego – Docker Compose dołącza ten plik automatycznie
+# przy `docker compose up`. Kod jest montowany do kontenerów, więc zmiany widać od razu.
+#
+#   Frontend:       http://localhost:5173
+#   Swagger (API):  http://localhost:8000/api/docs
+#   Mock USOS:      http://localhost:8001/exports
+#   PostgreSQL:     localhost:5432 (plan / plan)
+
+services:
+  db:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  mock-usos:
+    volumes:
+      - ./mock-usos/app:/app/app:ro
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+    ports:
+      - "${MOCK_USOS_PORT:-8001}:8001"
+
+  backend:
+    build:
+      target: dev
+    environment:
+      ENVIRONMENT: development
+      # Polling: zdarzenia plików nie przechodzą przez bind mount z Windowsa/macOS.
+      WATCHFILES_FORCE_POLLING: "true"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      target: dev
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      # node_modules zostają w kontenerze (zainstalowane dla Linuksa), nie z hosta.
+      - /app/node_modules
+    ports: !override
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on: !override
+      backend:
+        condition: service_started

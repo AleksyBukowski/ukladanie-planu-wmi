@@ -1,0 +1,8 @@
+# Wymuszamy LF w repozytorium – skrypty i Dockerfile muszą działać w kontenerach Linux,
+# nawet jeśli ktoś pracuje na Windowsie.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.xlsx binary

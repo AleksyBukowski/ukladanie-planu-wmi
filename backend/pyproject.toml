@@ -1,0 +1,10 @@
+[project]
+name = "plan-backend"
+version = "0.1.0"
+description = "REST API systemu układania planu zajęć WMiI UAM"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"

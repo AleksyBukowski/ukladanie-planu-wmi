@@ -1,0 +1,13 @@
+from fastapi.testclient import TestClient
+
+
+def test_health_reports_database_ok(client: TestClient) -> None:
+    response = client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "database": "ok"}
+
+
+def test_openapi_docs_are_served_under_api_prefix(client: TestClient) -> None:
+    assert client.get("/api/openapi.json").status_code == 200
+    assert client.get("/api/docs").status_code == 200

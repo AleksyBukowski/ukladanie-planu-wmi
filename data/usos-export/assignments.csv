@@ -1,0 +1,3 @@
+course_code,teacher_external_id,group_code,class_type,required_room_type,units_per_week
+ASD,T001,INF-2A,lab,lab,1
+BD,T002,INF-2A,exercises,classroom,1

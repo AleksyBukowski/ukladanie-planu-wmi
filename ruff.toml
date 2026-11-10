@@ -1,0 +1,20 @@
+# Wspólna konfiguracja lintera i formattera dla całego kodu Pythona (backend, mock-usos).
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "node_modules"]
+
+[lint]
+select = [
+  "E",   # pycodestyle
+  "W",
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # bugbear
+  "UP",  # pyupgrade
+  "SIM", # simplify
+]
+# B008: FastAPI używa Depends() w domyślnych argumentach – to zamierzone.
+ignore = ["B008"]
+
+[lint.isort]
+known-first-party = ["app"]

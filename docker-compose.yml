@@ -1,0 +1,75 @@
+# Konfiguracja bazowa (produkcyjna / staging) – NFR-06, P-05.
+#
+#   Lokalnie (dev, hot reload):   docker compose up --build
+#     → automatycznie dołączany jest docker-compose.override.yml
+#   Na serwerze (bez overrides):  docker compose -f docker-compose.yml up -d --build
+#
+# Konfiguracja przez zmienne środowiskowe / plik .env (patrz .env.example).
+
+name: plan-wmi
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-plan}
+      POSTGRES_USER: ${POSTGRES_USER:-plan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plan}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Zastępstwo dla USOS (brak dostępu do prawdziwego API) – tylko odczyt plików eksportu.
+  mock-usos:
+    build: ./mock-usos
+    restart: unless-stopped
+    volumes:
+      - ./data/usos-export:/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-plan}:${POSTGRES_PASSWORD:-plan}@db:5432/${POSTGRES_DB:-plan}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      USOS_BASE_URL: ${USOS_BASE_URL:-http://mock-usos:8001}
+    depends_on:
+      db:
+        condition: service_healthy
+      mock-usos:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  # nginx: statyczny build Reacta + reverse proxy /api → backend.
+  # HTTPS zapewnia serwer wydziałowy / zewnętrzny reverse proxy przed tym portem.
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
