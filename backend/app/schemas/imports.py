@@ -1,9 +1,13 @@
-"""Wspólne schematy raportu błędów importu (FR-05)."""
+"""Wspólne schematy importu danych: raport błędów (FR-05) i podsumowanie importu (FR-04)."""
 
 from pydantic import BaseModel, Field
 
 
 class ImportIssue(BaseModel):
+    file: str | None = Field(
+        default=None,
+        description="Plik, którego dotyczy błąd (np. `rooms`); brak przy imporcie jednego pliku.",
+    )
     row: int | None = Field(
         default=None,
         description="Numer wiersza w pliku (nagłówek = 1) albo pozycja na liście w żądaniu JSON "
@@ -18,3 +22,13 @@ class ImportErrorResponse(BaseModel):
 
     detail: str
     errors: list[ImportIssue]
+
+
+class DataImportSummary(BaseModel):
+    """Liczba rekordów zapisanych przez import danych wejściowych."""
+
+    rooms: int
+    groups: int
+    teachers: int
+    courses: int
+    assignments: int

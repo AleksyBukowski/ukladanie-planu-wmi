@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 from app.models import TimeSlot
 from app.schemas.imports import ImportIssue
 from app.schemas.time_slots import DAY_NAMES, TimeSlotCreate
+from app.services.import_errors import ImportValidationError
 from app.services.tabular import TabularFileError, parse_table
 
 COLUMNS = ("day_of_week", "start_time", "end_time")
@@ -62,13 +63,8 @@ class TimeSlotConflictError(ValueError):
     """Blok nachodzi na inny blok tego samego dnia."""
 
 
-class TimeGridValidationError(ValueError):
+class TimeGridValidationError(ImportValidationError):
     """Dane siatki są niepoprawne – `issues` zawiera wszystkie znalezione błędy."""
-
-    def __init__(self, message: str, issues: list[ImportIssue]) -> None:
-        super().__init__(message)
-        self.message = message
-        self.issues = issues
 
 
 # --- Odczyt i pojedyncze bloki (FR-03, FR-06) --------------------------------------------------

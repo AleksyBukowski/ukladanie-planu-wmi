@@ -97,11 +97,13 @@ odpowiedź wygląda tak:
   "detail": "Plik siatki godzin zawiera błędy.",
   "errors": [
     {
+      "file": null,
       "row": 3,
       "column": "day_of_week",
       "message": "Nieprawidłowy dzień tygodnia „funday” – podaj liczbę 0–6 (0 = poniedziałek) lub nazwę dnia, np. „poniedziałek”, „pon”."
     },
     {
+      "file": null,
       "row": 4,
       "column": "end_time",
       "message": "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia."
@@ -111,7 +113,8 @@ odpowiedź wygląda tak:
 ```
 
 Błąd dotyczący całego pliku, np. brak wymaganej kolumny albo nieobsługiwany format, ma
-`"row": null` i `"column": null`.
+`"row": null` i `"column": null`. Pole `file` przy imporcie siatki jest zawsze `null` – ma
+znaczenie przy imporcie danych wejściowych, który przyjmuje kilka plików naraz.
 
 Nakładające się bloki są zgłaszane przy późniejszym z nich, z numerem wiersza bloku, na który
 nachodzi, np. „Blok poniedziałek 09:00–10:30 nachodzi na blok z wiersza 2 (08:00–09:30).”

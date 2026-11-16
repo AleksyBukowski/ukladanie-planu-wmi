@@ -4,7 +4,7 @@
 | ---- | ----------------------------------------- | --------------------------------------- | ---- |
 | D-01 | Dokument wizji projektu                   | poza repo (Teams)                       | gotowy |
 | D-02 | Dokument wymagań projektowych             | poza repo (Teams)                       | v1.0 |
-| D-03 | Specyfikacja formatu importu              | `docs/format-importu.md` + szablony w `data/`; siatka godzin: [`import-siatki-godzin.md`](import-siatki-godzin.md) | w toku |
+| D-03 | Specyfikacja formatu importu              | `docs/format-importu.md` + szablony w `data/`; dane wejściowe: [`import-danych-wejsciowych.md`](import-danych-wejsciowych.md), siatka godzin: [`import-siatki-godzin.md`](import-siatki-godzin.md) | w toku |
 | D-04 | Architektura (C4 I–II, ERD)               | [`architektura.md`](architektura.md)    | wstępna |
 | D-05 | Model optymalizacyjny                     | `docs/model-optymalizacyjny.md`         | do zrobienia |
 | D-06 | Prototyp UI                               | Figma (link w zadaniach frontendowych)  | w toku |

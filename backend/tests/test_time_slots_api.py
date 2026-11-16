@@ -187,9 +187,9 @@ def test_import_rejects_empty_grid(client: TestClient) -> None:
 
 
 def test_import_rejects_too_large_file(client: TestClient, monkeypatch) -> None:
-    from app.api.routes import time_slots
+    from app.api import uploads
 
-    monkeypatch.setattr(time_slots, "MAX_UPLOAD_BYTES", 10)
+    monkeypatch.setattr(uploads, "MAX_UPLOAD_BYTES", 10)
 
     response = _upload(client, b"day_of_week,start_time,end_time\n")
 

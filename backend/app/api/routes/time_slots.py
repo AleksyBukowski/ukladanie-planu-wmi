@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, sta
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from app.api.uploads import IMPORT_ERROR_RESPONSES, import_error_response, read_upload
 from app.db.session import get_db
-from app.schemas.imports import ImportErrorResponse
 from app.schemas.time_slots import TimeGridImportResult, TimeSlotCreate, TimeSlotRead
 from app.services import time_grid
 from app.services.time_grid import (
@@ -17,16 +17,11 @@ from app.services.time_grid import (
     TimeSlotNotFoundError,
 )
 
-# Limit rozmiaru wgrywanego pliku – siatka to kilkadziesiąt wierszy, 5 MB to duży zapas.
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024
-
 router = APIRouter(prefix="/time-slots", tags=["siatka godzin"])
 
 _NOT_FOUND = {404: {"description": "Blok nie istnieje"}}
 _CONFLICT = {409: {"description": "Blok nachodzi na inny blok tego samego dnia"}}
-_GRID_ERRORS = {
-    422: {"model": ImportErrorResponse, "description": "Błędy danych – nic nie zapisano"}
-}
+_GRID_ERRORS = {422: IMPORT_ERROR_RESPONSES[422]}
 
 
 @router.get("", response_model=list[TimeSlotRead])
@@ -43,14 +38,14 @@ def replace_time_grid(
     try:
         result = time_grid.replace_time_grid(db, slots)
     except TimeGridValidationError as exc:
-        return _grid_error_response(exc)
+        return import_error_response(exc)
     return [TimeSlotRead.model_validate(slot) for slot in result]
 
 
 @router.post(
     "/import",
     response_model=TimeGridImportResult,
-    responses={**_GRID_ERRORS, 413: {"description": "Plik jest za duży"}},
+    responses=IMPORT_ERROR_RESPONSES,
 )
 def import_time_grid(
     file: UploadFile, db: Session = Depends(get_db)
@@ -60,16 +55,11 @@ def import_time_grid(
     Wymagane kolumny: `day_of_week` (0–6 lub nazwa dnia), `start_time`, `end_time` (GG:MM).
     Przy błędach zwraca listę błędów z numerami wierszy i niczego nie zapisuje (FR-05).
     """
-    content = file.file.read(MAX_UPLOAD_BYTES + 1)
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            413,
-            f"Plik jest za duży – maksymalny rozmiar to {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
-        )
+    content = read_upload(file)
     try:
         result = time_grid.import_time_grid(db, content, file.filename)
     except TimeGridValidationError as exc:
-        return _grid_error_response(exc)
+        return import_error_response(exc)
     return TimeGridImportResult(
         imported=len(result),
         time_slots=[TimeSlotRead.model_validate(slot) for slot in result],
@@ -115,8 +105,3 @@ def delete_time_slot(slot_id: int, db: Session = Depends(get_db)) -> Response:
     except TimeSlotNotFoundError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-def _grid_error_response(exc: TimeGridValidationError) -> JSONResponse:
-    body = ImportErrorResponse(detail=exc.message, errors=exc.issues)
-    return JSONResponse(status_code=422, content=body.model_dump())
