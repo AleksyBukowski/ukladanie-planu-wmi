@@ -78,7 +78,7 @@ erDiagram
     }
     ASSIGNMENT_GROUP {
         int assignment_id PK, FK
-        int student_group_id PK, FK
+        int group_id PK, FK
     }
 ```
 

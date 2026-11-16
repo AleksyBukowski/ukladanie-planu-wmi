@@ -22,28 +22,22 @@ def test_assignment_links_course_teacher_and_group(db: Session) -> None:
     assignment = Assignment(
         course=Course(code="ASD", name="Algorytmy i struktury danych"),
         teacher=Teacher(title="dr", first_name="Anna", last_name="Nowak"),
-        group=StudentGroup(
-            code="INF-2A", name="Informatyka, rok 2, grupa A", size=28
-        ),
+        groups=[StudentGroup(code="INF-2A", name="Informatyka, rok 2, grupa A", size=28)],
         class_type=ClassType.LAB,
         required_room_type=RoomType.LAB,
         units_per_week=1,
     )
-    db.add_all(
-        [assignment, Room(code="L2.03", capacity=30, room_type=RoomType.LAB)]
-    )
+    db.add_all([assignment, Room(code="L2.03", capacity=30, room_type=RoomType.LAB)])
     db.commit()
 
     stored = db.scalars(select(Assignment)).one()
-    assert stored.group.code == "INF-2A"
+    assert stored.groups[0].code == "INF-2A"
     assert stored.class_type is ClassType.LAB
     assert db.scalars(select(Room)).one().room_type is RoomType.LAB
 
 
 def test_time_slot_stores_times_and_default_week_type(db: Session) -> None:
-    db.add(
-        TimeSlot(day_of_week=0, start_time=time(8, 0), end_time=time(9, 30))
-    )
+    db.add(TimeSlot(day_of_week=0, start_time=time(8, 0), end_time=time(9, 30)))
     db.commit()
 
     slot = db.scalars(select(TimeSlot)).one()
@@ -102,9 +96,7 @@ def test_time_slot_rejects_duplicate_day_time_and_week_type(
 
 
 @pytest.mark.parametrize("invalid_day", [-1, 7])
-def test_time_slot_rejects_invalid_day_of_week(
-    db: Session, invalid_day: int
-) -> None:
+def test_time_slot_rejects_invalid_day_of_week(db: Session, invalid_day: int) -> None:
     db.add(
         TimeSlot(
             day_of_week=invalid_day,
@@ -123,9 +115,7 @@ def test_time_slot_rejects_invalid_day_of_week(
         (time(10, 0), time(10, 0)),
     ],
 )
-def test_time_slot_rejects_invalid_time_order(
-    db: Session, start: time, end: time
-) -> None:
+def test_time_slot_rejects_invalid_time_order(db: Session, start: time, end: time) -> None:
     db.add(TimeSlot(day_of_week=0, start_time=start, end_time=end))
     with pytest.raises(IntegrityError):
         db.commit()

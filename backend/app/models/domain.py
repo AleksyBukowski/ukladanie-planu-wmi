@@ -69,30 +69,22 @@ class TimeSlot(Base):
             "week_type",
             name="uq_time_slots_day_start_end_week",
         ),
-        CheckConstraint(
-            "day_of_week BETWEEN 0 AND 6", name="ck_time_slots_day_of_week"
-        ),
-        CheckConstraint(
-            "start_time < end_time", name="ck_time_slots_start_before_end"
-        ),
+        CheckConstraint("day_of_week BETWEEN 0 AND 6", name="ck_time_slots_day_of_week"),
+        CheckConstraint("start_time < end_time", name="ck_time_slots_start_before_end"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     day_of_week: Mapped[int]  # 0 = poniedziałek … 6 = niedziela
     start_time: Mapped[time] = mapped_column(Time)
     end_time: Mapped[time] = mapped_column(Time)
-    week_type: Mapped[WeekType] = mapped_column(
-        _enum(WeekType), default=WeekType.ALL
-    )
+    week_type: Mapped[WeekType] = mapped_column(_enum(WeekType), default=WeekType.ALL)
 
 
 class Room(Base):
     """Sala dydaktyczna wraz z pojemnością i przeznaczeniem."""
 
     __tablename__ = "rooms"
-    __table_args__ = (
-        CheckConstraint("capacity > 0", name="ck_rooms_capacity_positive"),
-    )
+    __table_args__ = (CheckConstraint("capacity > 0", name="ck_rooms_capacity_positive"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(32), unique=True)  # np. "A1.12"
@@ -104,9 +96,7 @@ class StudentGroup(Base):
     """Grupa zajęciowa – przechowujemy tylko liczebność, bez danych studentów (NFR-04)."""
 
     __tablename__ = "student_groups"
-    __table_args__ = (
-        CheckConstraint("size > 0", name="ck_student_groups_size_positive"),
-    )
+    __table_args__ = (CheckConstraint("size > 0", name="ck_student_groups_size_positive"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(32), unique=True)  # np. "INF-2A"
@@ -125,16 +115,12 @@ class Teacher(Base):
     __tablename__ = "teachers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    external_id: Mapped[str | None] = mapped_column(
-        String(64), unique=True
-    )  # id z USOS
+    external_id: Mapped[str | None] = mapped_column(String(64), unique=True)  # id z USOS
     title: Mapped[str] = mapped_column(String(64), default="")  # np. "dr inż."
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
 
-    assignments: Mapped[list["Assignment"]] = relationship(
-        back_populates="teacher"
-    )
+    assignments: Mapped[list["Assignment"]] = relationship(back_populates="teacher")
 
 
 class Course(Base):
@@ -146,9 +132,7 @@ class Course(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True)
     name: Mapped[str] = mapped_column(String(200))
 
-    assignments: Mapped[list["Assignment"]] = relationship(
-        back_populates="course"
-    )
+    assignments: Mapped[list["Assignment"]] = relationship(back_populates="course")
 
 
 class AssignmentGroup(Base):
@@ -174,18 +158,12 @@ class Assignment(Base):
 
     __tablename__ = "assignments"
     __table_args__ = (
-        CheckConstraint(
-            "units_per_week > 0", name="ck_assignments_units_per_week_positive"
-        ),
+        CheckConstraint("units_per_week > 0", name="ck_assignments_units_per_week_positive"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    course_id: Mapped[int] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE")
-    )
-    teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id", ondelete="CASCADE")
-    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"))
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="CASCADE"))
     class_type: Mapped[ClassType] = mapped_column(_enum(ClassType))
     required_room_type: Mapped[RoomType] = mapped_column(_enum(RoomType))
     units_per_week: Mapped[int] = mapped_column(default=1)
