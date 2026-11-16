@@ -2,7 +2,7 @@
 
 from collections.abc import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -17,6 +17,12 @@ if settings.is_sqlite:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+        # SQLite domyślnie nie wymusza FK/ON DELETE CASCADE bez tego pragmatu.
+        dbapi_connection.execute("PRAGMA foreign_keys=ON")
+
 else:
     engine = create_engine(settings.database_url, pool_pre_ping=True)
 

@@ -120,7 +120,9 @@ class Teacher(Base):
     first_name: Mapped[str] = mapped_column(String(100))
     last_name: Mapped[str] = mapped_column(String(100))
 
-    assignments: Mapped[list["Assignment"]] = relationship(back_populates="teacher")
+    assignments: Mapped[list["Assignment"]] = relationship(
+        back_populates="teacher", passive_deletes="all"
+    )
 
 
 class Course(Base):
@@ -132,7 +134,9 @@ class Course(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True)
     name: Mapped[str] = mapped_column(String(200))
 
-    assignments: Mapped[list["Assignment"]] = relationship(back_populates="course")
+    assignments: Mapped[list["Assignment"]] = relationship(
+        back_populates="course", passive_deletes="all"
+    )
 
 
 class AssignmentGroup(Base):
