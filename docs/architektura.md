@@ -32,39 +32,53 @@ flowchart LR
 
 ```mermaid
 erDiagram
-    COURSE ||--o{ ASSIGNMENT : "przedmiot"
+    COURSE ||--o{ ASSIGNMENT : "dotyczy"
     TEACHER ||--o{ ASSIGNMENT : "prowadzi"
-    STUDENT_GROUP ||--o{ ASSIGNMENT : "uczestniczy"
+    ASSIGNMENT ||--o{ ASSIGNMENT_GROUP : "obejmuje"
+    STUDENT_GROUP ||--o{ ASSIGNMENT_GROUP : "uczestniczy"
 
     TIME_SLOT {
-        int day_of_week "0 = pon"
-        time start_time
-        time end_time
+        int id PK
+        int day_of_week "0 = pon, NOT NULL"
+        time start_time "NOT NULL"
+        time end_time "NOT NULL"
+        enum week_type "all | odd | even"
     }
     ROOM {
-        string code UK
-        int capacity
+        int id PK
+        string code UK "NOT NULL"
+        int capacity "NOT NULL"
         enum room_type "lecture_hall | classroom | lab"
     }
     STUDENT_GROUP {
-        string code UK
-        string name
-        int size
+        int id PK
+        string code UK "NOT NULL"
+        string name "NOT NULL"
+        int size "NOT NULL"
     }
     TEACHER {
+        int id PK
         string external_id UK "id z USOS"
         string title
-        string first_name
-        string last_name
+        string first_name "NOT NULL"
+        string last_name "NOT NULL"
     }
     COURSE {
-        string code UK
-        string name
+        int id PK
+        string code UK "NOT NULL"
+        string name "NOT NULL"
     }
     ASSIGNMENT {
+        int id PK
+        int course_id FK "NOT NULL"
+        int teacher_id FK "NOT NULL"
         enum class_type "lecture | exercises | lab"
-        enum required_room_type
-        int units_per_week
+        enum required_room_type "lecture_hall | classroom | lab"
+        int units_per_week "NOT NULL"
+    }
+    ASSIGNMENT_GROUP {
+        int assignment_id PK, FK
+        int student_group_id PK, FK
     }
 ```
 
