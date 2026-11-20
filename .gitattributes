@@ -6,3 +6,7 @@
 *.jpg binary
 *.ico binary
 *.xlsx binary
+
+# Skrypty Windows: CRLF (cmd.exe źle obsługuje LF)
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

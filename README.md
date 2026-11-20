@@ -53,7 +53,24 @@ W MVP nie używamy migracji (decyzja z dokumentu wymagań, sekcja 1.1) – tabel
 przy starcie backendu (`Base.metadata.create_all`). `create_all` **nie modyfikuje istniejących
 tabel**, więc po zmianie istniejącego modelu odtwórz bazę: `docker compose down -v && docker compose up`.
 
-## Praca bez Dockera (opcjonalnie)
+## Uruchomienie bez Dockera i bez admina (Windows, np. komputery na zajęciach)
+
+```bash
+scripts\start-local.cmd
+```
+
+(albo dwuklik na `scripts\start-local.cmd` w Eksploratorze). Skrypt przy pierwszym uruchomieniu
+pobiera do katalogu `.tools\` w projekcie Pythona 3.12 (przez [uv](https://docs.astral.sh/uv/))
+i przenośny Node.js 22, instaluje zależności i uruchamia aplikację na http://127.0.0.1:5173.
+Nic nie jest instalowane w systemie. Backend działa na pliku SQLite `backend\dev.db` zamiast
+PostgreSQL – wystarczy do demo. Pierwsze uruchomienie trwa kilka minut, kolejne kilka sekund.
+
+- `Ctrl+C` w oknie skryptu zatrzymuje aplikację; logi są w `.tools\logs\`.
+- Czysta baza: `scripts\start-local.cmd -ResetDatabase`; inne porty: `-BackendPort 8001 -FrontendPort 5174`.
+- Wymaga dostępu do internetu przy pierwszym uruchomieniu (github.com, nodejs.org, pypi.org).
+  Żeby wszystko usunąć, skasuj katalog `.tools\` i `backend\.venv-local\`.
+
+## Praca bez Dockera – ręcznie (dla deweloperów)
 
 **Backend** – Python 3.12 lub 3.13 (OR-Tools nie ma jeszcze paczek dla nowszych wersji):
 

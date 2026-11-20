@@ -33,3 +33,7 @@ data/private/
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+
+# --- Lokalne uruchomienie bez Dockera (scripts/start-local.ps1) ---
+.tools/
+.venv-local/
