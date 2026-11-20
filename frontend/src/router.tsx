@@ -1,7 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { AppLayout } from './layout/AppLayout';
+import { ImportPage } from './pages/ImportPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { TimeSlotPage } from './pages/TimeSlotPage';
 
 // Nowy widok: utwórz plik w src/pages/ i podmień odpowiedni PlaceholderPage poniżej.
 export const router = createBrowserRouter([
@@ -67,25 +69,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'import',
-        element: (
-          <PlaceholderPage
-            eyebrow="Dane wejściowe"
-            title="Import danych"
-            description="Import przedmiotów, grup, prowadzących, sal i przypisań z plików CSV/XLSX z raportem błędów."
-            requirements="FR-04, FR-05"
-          />
-        ),
+        element: <ImportPage />,
       },
       {
         path: 'siatka-godzin',
-        element: (
-          <PlaceholderPage
-            eyebrow="Konfiguracja semestru"
-            title="Siatka godzin"
-            description="Dni zajęć i bloki godzinowe semestru."
-            requirements="FR-03"
-          />
-        ),
+        element: <TimeSlotPage />,
       },
       {
         path: 'publiczny',

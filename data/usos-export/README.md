@@ -1,10 +1,9 @@
-# Zamockowany eksport z USOS
+# Specyfikacja formatu importu danych (D-03) oraz zbiór referencyjny (D-10)
 
-Pliki w tym katalogu udają eksport danych z USOS i są serwowane przez serwis `mock-usos`
-(`http://localhost:8001/exports`). **Tylko dane syntetyczne** – prawdziwe dane osobowe
-nigdy nie trafiają do repozytorium (NFR-04). Prawdziwe/zanonimizowane pliki trzymaj
-lokalnie w `data/private/` (katalog jest w `.gitignore`).
+Katalog zawiera syntetyczny zbiór danych referencyjnych dla jednego semestru akademickiego, wygenerowany zgodnie z wymaganiami **NFR-04** (brak rzeczywistych danych osobowych).
 
-Obecne pliki to **minimalne przykłady tymczasowe**. Docelowy format kolumn i reguły walidacji
-opisuje specyfikacja importu (D-03), a pełny zbiór generuje skrypt danych syntetycznych (D-10) –
-po ich przygotowaniu pliki zostaną tu podmienione.
+## Generowanie danych
+
+Zbiór jest generowany automatycznie przy użyciu skryptu w Pythonie:
+```bash
+python data/usos-export/generate_synthetic_data.py
