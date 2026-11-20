@@ -6,7 +6,8 @@ i dodaj go poniżej.
 
 from fastapi import APIRouter
 
-from app.api.routes import health
+from app.api.routes import health, time_slots
 
 api_router = APIRouter()
 api_router.include_router(health.router)
+api_router.include_router(time_slots.router)
