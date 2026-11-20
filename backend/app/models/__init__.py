@@ -6,6 +6,7 @@ nie utworzy jego tabel.
 
 from app.models.domain import (
     Assignment,
+    AssignmentGroup,
     ClassType,
     Course,
     Room,
@@ -13,10 +14,12 @@ from app.models.domain import (
     StudentGroup,
     Teacher,
     TimeSlot,
+    WeekType,
 )
 
 __all__ = [
     "Assignment",
+    "AssignmentGroup",
     "ClassType",
     "Course",
     "Room",
@@ -24,4 +27,5 @@ __all__ = [
     "StudentGroup",
     "Teacher",
     "TimeSlot",
+    "WeekType",
 ]
