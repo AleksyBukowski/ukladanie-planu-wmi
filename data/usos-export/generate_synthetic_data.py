@@ -31,9 +31,7 @@ def generate_rooms():
         )
     # 12 pracowni komputerowych/labów
     for i in range(1, 13):
-        rooms.append(
-            {"code": f"L2.{i:02d}", "capacity": 30, "room_type": "lab"}
-        )
+        rooms.append({"code": f"L2.{i:02d}", "capacity": 30, "room_type": "lab"})
 
     with open(BASE_DIR / "rooms.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["code", "capacity", "room_type"])
@@ -121,9 +119,7 @@ def generate_courses():
     all_courses = []
     for code, name in courses_data:
         all_courses.append({"code": code, "name": name})
-        all_courses.append(
-            {"code": f"{code}-ADV", "name": f"{name} (zaawansowane)"}
-        )
+        all_courses.append({"code": f"{code}-ADV", "name": f"{name} (zaawansowane)"})
 
     with open(BASE_DIR / "courses.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["code", "name"])
@@ -194,9 +190,7 @@ def generate_assignments(courses, teachers, groups):
         "required_room_type",
         "units_per_week",
     ]
-    with open(
-        BASE_DIR / "assignments.csv", "w", newline="", encoding="utf-8"
-    ) as f:
+    with open(BASE_DIR / "assignments.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(assignments)
