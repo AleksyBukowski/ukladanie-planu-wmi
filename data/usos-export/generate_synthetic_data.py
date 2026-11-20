@@ -13,27 +13,13 @@ def generate_rooms():
     rooms = []
     # 6 sal wykładowych
     for i in range(1, 7):
-        rooms.append(
-            {
-                "code": f"A0.{i:02d}",
-                "capacity": 120,
-                "room_type": "lecture_hall",
-            }
-        )
+        rooms.append({"code": f"A0.{i:02d}", "capacity": 120, "room_type": "lecture_hall"})
     # 12 sal ćwiczeniowych
     for i in range(1, 13):
-        rooms.append(
-            {
-                "code": f"A1.{i:02d}",
-                "capacity": 32,
-                "room_type": "classroom",
-            }
-        )
+        rooms.append({"code": f"A1.{i:02d}", "capacity": 32, "room_type": "classroom"})
     # 12 pracowni komputerowych/labów
     for i in range(1, 13):
-        rooms.append(
-            {"code": f"L2.{i:02d}", "capacity": 30, "room_type": "lab"}
-        )
+        rooms.append({"code": f"L2.{i:02d}", "capacity": 30, "room_type": "lab"})
 
     with open(BASE_DIR / "rooms.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["code", "capacity", "room_type"])
@@ -79,19 +65,13 @@ def generate_teachers():
         teachers.append(
             {
                 "external_id": f"T{i:03d}",
-                "title": random.choices(
-                    titles, weights=[0.2, 0.5, 0.2, 0.1]
-                )[0],
+                "title": random.choices(titles, weights=[0.2, 0.5, 0.2, 0.1])[0],
                 "first_name": random.choice(first_names),
-                "last_name": (
-                    f"{random.choice(last_names)}_{i}"  # syntetyczny sufiks
-                ),
+                "last_name": f"{random.choice(last_names)}_{i}",  # syntetyczny sufiks
             }
         )
 
-    with open(
-        BASE_DIR / "teachers.csv", "w", newline="", encoding="utf-8"
-    ) as f:
+    with open(BASE_DIR / "teachers.csv", "w", newline="", encoding="utf-8") as f:
         fieldnames = ["external_id", "title", "first_name", "last_name"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
