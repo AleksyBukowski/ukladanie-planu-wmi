@@ -36,3 +36,42 @@ export interface HealthResponse {
 }
 
 export const getHealth = () => apiFetch<HealthResponse>('/health');
+
+export interface TimeSlotDto {
+  id?: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+export interface ImportErrorDetail {
+  row: number;
+  field?: string;
+  value?: string;
+  message: string;
+}
+
+export interface ImportResultDto {
+  success: boolean;
+  entity_type?: string;
+  imported_count?: number;
+  errors?: ImportErrorDetail[];
+}
+
+export const getTimeSlots = () => apiFetch<TimeSlotDto[]>('/time-slots');
+
+export const saveTimeSlots = (slots: TimeSlotDto[]) =>
+  apiFetch<TimeSlotDto[]>('/time-slots', {
+    method: 'POST',
+    body: JSON.stringify(slots),
+  });
+
+export const uploadImportFile = (file: File, entityType: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('entity_type', entityType);
+  return apiFetch<ImportResultDto>('/import', {
+    method: 'POST',
+    body: formData,
+  });
+};
