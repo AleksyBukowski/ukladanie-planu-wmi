@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import {
   Alert,
   Badge,
   Button,
   Code,
+  FileButton,
   FileInput,
+  Group,
   Paper,
-  SegmentedControl,
   Stack,
   Table,
   Text,
@@ -15,177 +15,256 @@ import {
 import {
   IconAlertCircle,
   IconCheck,
-  IconFileSpreadsheet,
+  IconFiles,
   IconFileText,
+  IconInfoCircle,
   IconUpload,
 } from '@tabler/icons-react';
+import { useState } from 'react';
 
-import { ImportResultDto, uploadImportFile } from '../api/client';
+import {
+  type DataImportSummary,
+  describeApiError,
+  getImportErrors,
+  importInputData,
+  type ImportIssue,
+  INPUT_FILE_KEYS,
+  type InputFileKey,
+} from '../api/client';
+import { ImportIssuesTable } from '../components/ImportIssuesTable';
+
+// Opis plików zgodny ze specyfikacją importu D-03 (docs/format-importu.md, sekcja 4).
+const FILE_SPECS: Record<InputFileKey, { label: string; columns: string; aliases: string[] }> = {
+  rooms: { label: 'Sale', columns: 'code, capacity, room_type', aliases: ['sale'] },
+  groups: { label: 'Grupy', columns: 'code, name, size', aliases: ['grupy'] },
+  teachers: {
+    label: 'Prowadzący',
+    columns: 'external_id, title (opcjonalna), first_name, last_name',
+    aliases: ['prowadzacy'],
+  },
+  courses: { label: 'Przedmioty', columns: 'code, name', aliases: ['przedmioty'] },
+  assignments: {
+    label: 'Przypisania',
+    columns:
+      'course_code, teacher_external_id, group_code, class_type, required_room_type, units_per_week',
+    aliases: ['przypisania'],
+  },
+};
+
+const FILE_LABELS: Record<string, string> = Object.fromEntries(
+  INPUT_FILE_KEYS.map((key) => [key, FILE_SPECS[key].label]),
+);
+
+type Files = Partial<Record<InputFileKey, File>>;
+
+type Result =
+  | { kind: 'success'; summary: DataImportSummary }
+  | { kind: 'error'; message: string; issues?: ImportIssue[] };
+
+/** Dopasowuje plik do rodzaju danych po nazwie, np. `rooms.csv`, `Sale.xlsx`, `teachers_2026.csv`. */
+function matchFileKey(fileName: string): InputFileKey | null {
+  const stem = fileName
+    .toLowerCase()
+    .replace(/\.[^.]+$/, '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '');
+  return (
+    INPUT_FILE_KEYS.find((key) =>
+      [key, ...FILE_SPECS[key].aliases].some((name) => stem.startsWith(name)),
+    ) ?? null
+  );
+}
 
 export function ImportPage() {
-  const [entityType, setEntityType] = useState('all');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [result, setResult] = useState<ImportResultDto | null>(null);
+  const [files, setFiles] = useState<Files>({});
+  const [unmatched, setUnmatched] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<Result | null>(null);
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-    setIsUploading(true);
+  const missing = INPUT_FILE_KEYS.filter((key) => !files[key]);
+
+  const setFile = (key: InputFileKey, file: File | null) => {
+    setFiles((current) => {
+      const next = { ...current };
+      if (file) next[key] = file;
+      else delete next[key];
+      return next;
+    });
     setResult(null);
+  };
 
+  const handleMultiple = (selected: File[]) => {
+    const notMatched: string[] = [];
+    const matched: Files = {};
+    for (const file of selected) {
+      const key = matchFileKey(file.name);
+      if (key) matched[key] = file;
+      else notMatched.push(file.name);
+    }
+    setFiles((current) => ({ ...current, ...matched }));
+    setUnmatched(notMatched);
+    setResult(null);
+  };
+
+  const handleImport = async () => {
+    if (missing.length > 0) return;
+    setUploading(true);
+    setResult(null);
     try {
-      const res = await uploadImportFile(selectedFile, entityType);
-      setResult(res);
-    } catch {
-      // Przykładowy raport z transakcyjnej walidacji w celach demonstracyjnych
+      const summary = await importInputData(files as Record<InputFileKey, File>);
+      setResult({ kind: 'success', summary });
+    } catch (error) {
+      const report = getImportErrors(error);
       setResult({
-        success: false,
-        entity_type: entityType,
-        errors: [
-          {
-            row: 14,
-            field: 'capacity',
-            value: '-5',
-            message: 'Pojemność sali musi być liczbą całkowitą dodatnią',
-          },
-          {
-            row: 22,
-            field: 'room_type',
-            value: 'unknown_lab',
-            message: 'Nieznany typ sali. Dopuszczalne: lecture_hall, classroom, computer_lab',
-          },
-        ],
+        kind: 'error',
+        message: report?.detail ?? describeApiError(error),
+        issues: report?.errors,
       });
     } finally {
-      setIsUploading(false);
+      setUploading(false);
     }
   };
 
   return (
-    <Stack gap="lg">
+    <Stack gap="lg" maw={1100}>
       <div>
-        <Text size="xs" tt="uppercase" fw={700} c="dimmed">
+        <Text size="xs" tt="uppercase" fw={600} c="dimmed" lts={1}>
           Dane wejściowe
         </Text>
-        <Title order={2} fw={600}>
-          Import danych z CSV / XLSX
-        </Title>
+        <Title order={2}>Import danych</Title>
         <Text size="sm" c="dimmed">
-          Wgraj dane wyeksportowane z USOS lub przygotowane według specyfikacji wydziałowej (D-03).
+          Sale, grupy, prowadzący, przedmioty i przypisania z plików CSV/XLSX – eksport z USOS albo
+          szablony z data/templates (format: docs/format-importu.md, D-03).
         </Text>
       </div>
 
-      <Paper p="md" radius="md" withBorder>
-        <Text fw={600} size="sm" mb="xs">
-          Kategoria importowanych danych
-        </Text>
-        <SegmentedControl
-          value={entityType}
-          onChange={setEntityType}
-          fullWidth
-          data={[
-            { label: 'Paczka zbiorcza (Wszystko)', value: 'all' },
-            { label: 'Sale', value: 'rooms' },
-            { label: 'Grupy zajęciowe', value: 'groups' },
-            { label: 'Prowadzący', value: 'teachers' },
-            { label: 'Przedmioty', value: 'courses' },
-            { label: 'Przypisania', value: 'assignments' },
-          ]}
-        />
-      </Paper>
+      <Alert color="blue" icon={<IconInfoCircle />}>
+        Import wymaga <b>kompletu pięciu plików</b> i <b>zastępuje wszystkie</b> dotychczasowe dane
+        wejściowe. Wykonuje się w całości albo wcale – przy jakimkolwiek błędzie nic nie zostanie
+        zapisane. Siatka godzin pozostaje bez zmian.
+      </Alert>
 
-      <Paper p="xl" radius="md" withBorder>
-        <Stack align="center" gap="md">
-          <IconFileSpreadsheet size={48} color="var(--mantine-color-blue-6)" />
-          <div style={{ textAlign: 'center' }}>
-            <Text fw={500}>Wybierz lub przeciągnij plik do importu</Text>
+      <Paper p="md" withBorder>
+        <Group justify="space-between" mb="md">
+          <div>
+            <Text fw={600} size="sm">
+              Pliki do importu
+            </Text>
             <Text size="xs" c="dimmed">
-              Obsługiwane formaty: .csv, .xlsx. Maksymalny rozmiar: 10 MB.
+              Wybierz pliki pojedynczo albo wszystkie naraz – zostaną dopasowane po nazwie (np.
+              rooms.csv, sale.xlsx).
             </Text>
           </div>
+          <FileButton onChange={handleMultiple} accept=".csv,.xlsx" multiple>
+            {(props) => (
+              <Button {...props} variant="light" leftSection={<IconFiles size={16} />}>
+                Wybierz wszystkie pliki
+              </Button>
+            )}
+          </FileButton>
+        </Group>
 
-          <FileInput
-            placeholder="Kliknij, aby wybrać plik .csv lub .xlsx"
-            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            value={selectedFile}
-            onChange={setSelectedFile}
-            leftSection={<IconFileText size={16} />}
-            clearable
-            style={{ width: '100%', maxWidth: 450 }}
-          />
-
-          <Button
-            size="md"
-            leftSection={<IconUpload size={18} />}
-            disabled={!selectedFile}
-            loading={isUploading}
-            onClick={handleUpload}
+        {unmatched.length > 0 && (
+          <Alert
+            color="orange"
+            icon={<IconAlertCircle />}
+            mb="md"
+            withCloseButton
+            onClose={() => setUnmatched([])}
           >
-            Rozpocznij import danych
+            Nie rozpoznano: {unmatched.join(', ')}. Wskaż te pliki ręcznie w odpowiednim wierszu.
+          </Alert>
+        )}
+
+        <Table withTableBorder withColumnBorders verticalSpacing="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={130}>Dane</Table.Th>
+              <Table.Th>Wymagane kolumny</Table.Th>
+              <Table.Th w={340}>Plik</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {INPUT_FILE_KEYS.map((key) => (
+              <Table.Tr key={key}>
+                <Table.Td>
+                  <Text size="sm" fw={500}>
+                    {FILE_SPECS[key].label}
+                  </Text>
+                  <Code>{key}</Code>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="xs" ff="monospace">
+                    {FILE_SPECS[key].columns}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <FileInput
+                    size="xs"
+                    placeholder="Wybierz .csv lub .xlsx"
+                    accept=".csv,.xlsx"
+                    aria-label={`Plik: ${FILE_SPECS[key].label}`}
+                    value={files[key] ?? null}
+                    onChange={(file) => setFile(key, file)}
+                    leftSection={<IconFileText size={14} />}
+                    clearable
+                  />
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c={missing.length ? 'dimmed' : 'teal'}>
+            {missing.length
+              ? `Brakuje: ${missing.map((key) => FILE_SPECS[key].label).join(', ')}`
+              : 'Komplet plików – można importować.'}
+          </Text>
+          <Button
+            leftSection={<IconUpload size={16} />}
+            disabled={missing.length > 0}
+            loading={uploading}
+            onClick={handleImport}
+          >
+            Importuj dane
           </Button>
-        </Stack>
+        </Group>
       </Paper>
 
-      {result && result.success && (
-        <Alert color="teal" title="Import zakończony sukcesem!" icon={<IconCheck size={20} />}>
-          Wszystkie rekordy zostały poprawnie zwalidowane i zapisane w bazie danych.
-          {result.imported_count !== undefined && (
-            <Text size="sm" mt="xs">
-              Liczba zaimportowanych obiektów: <b>{result.imported_count}</b>.
-            </Text>
-          )}
+      {result?.kind === 'success' && (
+        <Alert color="teal" icon={<IconCheck />} title="Import zakończony">
+          <Text size="sm" mb="xs">
+            Dane wejściowe zostały zastąpione zawartością plików.
+          </Text>
+          <Group gap="xs">
+            {INPUT_FILE_KEYS.map((key) => (
+              <Badge key={key} variant="light" color="teal" size="lg">
+                {FILE_SPECS[key].label}: {result.summary[key]}
+              </Badge>
+            ))}
+          </Group>
         </Alert>
       )}
 
-      {result && !result.success && (
-        <Stack gap="sm">
-          <Alert
-            color="red"
-            title="Import odrzucony – wykryto błędy walidacji (Rollback)"
-            icon={<IconAlertCircle size={20} />}
-          >
-            Żadne dane nie zostały zapisane w bazie danych. Transakcja została w całości cofnięta
-            (NFR-05). Popraw poniższe błędy w pliku źródłowym i prześlij go ponownie.
-          </Alert>
-
-          {result.errors && result.errors.length > 0 && (
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={600} size="sm" mb="xs">
-                Szczegółowy wykaz błędów w pliku:
-              </Text>
-              <Table withTableBorder withColumnBorders striped>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th style={{ width: 120 }}>Wiersz</Table.Th>
-                    <Table.Th style={{ width: 180 }}>Pole / Kolumna</Table.Th>
-                    <Table.Th style={{ width: 180 }}>Błędna wartość</Table.Th>
-                    <Table.Th>Opis błędu</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {result.errors.map((err, idx) => (
-                    <Table.Tr key={idx}>
-                      <Table.Td>
-                        <Badge color="red" variant="light">
-                          Wiersz {err.row}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Code>{err.field || '-'}</Code>
-                      </Table.Td>
-                      <Table.Td>
-                        <Code color="red">{err.value || '-'}</Code>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{err.message}</Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Paper>
-          )}
-        </Stack>
+      {result?.kind === 'error' && (
+        <Alert
+          color="red"
+          icon={<IconAlertCircle />}
+          title="Import odrzucony – nic nie zostało zapisane"
+        >
+          <Stack gap="sm">
+            <Text size="sm">{result.message}</Text>
+            {result.issues && result.issues.length > 0 && (
+              <>
+                <Text size="sm">
+                  Błędów: <b>{result.issues.length}</b>. Popraw pliki i wgraj je ponownie.
+                </Text>
+                <ImportIssuesTable issues={result.issues} fileLabels={FILE_LABELS} />
+              </>
+            )}
+          </Stack>
+        </Alert>
       )}
     </Stack>
   );
