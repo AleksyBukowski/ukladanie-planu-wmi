@@ -1,3 +1,41 @@
 code,name
+WDI,Wstęp do informatyki
+WDI-ADV,Wstęp do informatyki (zaawansowane)
 ASD,Algorytmy i struktury danych
+ASD-ADV,Algorytmy i struktury danych (zaawansowane)
 BD,Bazy danych
+BD-ADV,Bazy danych (zaawansowane)
+SO,Systemy operacyjne
+SO-ADV,Systemy operacyjne (zaawansowane)
+SK,Sieci komputerowe
+SK-ADV,Sieci komputerowe (zaawansowane)
+PO,Programowanie obiektowe
+PO-ADV,Programowanie obiektowe (zaawansowane)
+IO,Inżynieria oprogramowania
+IO-ADV,Inżynieria oprogramowania (zaawansowane)
+AM1,Analiza matematyczna 1
+AM1-ADV,Analiza matematyczna 1 (zaawansowane)
+AM2,Analiza matematyczna 2
+AM2-ADV,Analiza matematyczna 2 (zaawansowane)
+GAL,Geometria z algebrą liniową
+GAL-ADV,Geometria z algebrą liniową (zaawansowane)
+MD,Matematyka dyskretna
+MD-ADV,Matematyka dyskretna (zaawansowane)
+RP,Rachunek prawdopodobieństwa
+RP-ADV,Rachunek prawdopodobieństwa (zaawansowane)
+MN,Metody numeryczne
+MN-ADV,Metody numeryczne (zaawansowane)
+WWW,Technologie webowe
+WWW-ADV,Technologie webowe (zaawansowane)
+AOD,Algorytmy optymalizacji dyskretnej
+AOD-ADV,Algorytmy optymalizacji dyskretnej (zaawansowane)
+KRYP,Kryptografia i bezpieczeństwo
+KRYP-ADV,Kryptografia i bezpieczeństwo (zaawansowane)
+SZT,Sztuczna inteligencja
+SZT-ADV,Sztuczna inteligencja (zaawansowane)
+ML,Uczenie maszynowe
+ML-ADV,Uczenie maszynowe (zaawansowane)
+ANG1,Język angielski B2
+ANG1-ADV,Język angielski B2 (zaawansowane)
+ANG2,Język angielski C1
+ANG2-ADV,Język angielski C1 (zaawansowane)
